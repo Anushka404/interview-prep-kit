@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { findUncovered } from "@/lib/pipeline/coverage";
+import { CoverageMap } from "@/components/coverage-map";
 import type { Kit, Question, Flashcard } from "@/lib/schema";
 
 type Category = Question["category"];
@@ -28,7 +29,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 type SaveState = "saved" | "saving" | "error";
 
-export function KitBuilder({ id, initialKit }: { id: string; initialKit: Kit }) {
+export function KitBuilder({
+  id, initialKit, practice,
+}: { id: string; initialKit: Kit; practice: Record<string, { confidence: number; at: string }> }) {
   const [kit, setKit] = useState<Kit>(initialKit);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [regen, setRegen] = useState<string | null>(null);
@@ -150,6 +153,7 @@ export function KitBuilder({ id, initialKit }: { id: string; initialKit: Kit }) 
           <TabsTrigger value="questions">Questions</TabsTrigger>
           <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="coverage">Coverage</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -258,6 +262,11 @@ export function KitBuilder({ id, initialKit }: { id: string; initialKit: Kit }) 
               )}
             </div>
           ))}
+        </TabsContent>
+
+        {/* Coverage & weak-spot map */}
+        <TabsContent value="coverage" className="pt-6">
+          <CoverageMap kit={kit} practice={practice} />
         </TabsContent>
       </Tabs>
     </div>

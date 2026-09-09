@@ -11,7 +11,7 @@ export default async function KitPage({ params }: { params: Promise<{ id: string
   if (!doc) notFound();
 
   if (doc.status === "done" && doc.kit) {
-    return <KitBuilder id={id} initialKit={doc.kit} />;
+    return <KitBuilder id={id} initialKit={doc.kit} practice={doc.practice ?? {}} />;
   }
   return <GenerationProgress id={id} initialStatus={doc.status} initialProgress={doc.progress} />;
 }
