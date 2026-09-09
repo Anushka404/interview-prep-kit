@@ -11,7 +11,7 @@ import { ZodError, type ZodType } from "zod";
  * callModel() only — callers are provider-agnostic.
  */
 
-const MODEL = process.env.LLM_MODEL ?? "gemini-2.0-flash";
+const MODEL = process.env.LLM_MODEL ?? "gemini-2.5-flash";
 const MIN_GAP_MS = Number(process.env.LLM_MIN_GAP_MS ?? 1200);
 const MAX_ATTEMPTS = Number(process.env.LLM_MAX_ATTEMPTS ?? 6);
 

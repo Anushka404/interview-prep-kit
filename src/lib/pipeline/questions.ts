@@ -55,7 +55,9 @@ export async function generateQuestionsForCategory(
   const prompt = [
     `Generate ${category} interview questions for a ${ctx.seniority} ${ctx.role} role.`,
     `Category focus: ${CATEGORY_BRIEF[category]}.`,
-    `Produce about ${perRequirement} question(s) per requirement below. Each question must set`,
+    `Write at least ${perRequirement} distinct question(s) for EACH requirement below —`,
+    `aim for one focused question per requirement. Combine two requirements into a single`,
+    `question only when they are genuinely inseparable. Each question must set`,
     `requirement_ids to the requirement id(s) it actually covers (from this list only).`,
     "Give a concise answer_outline (what a strong answer includes) and difficulty 1-3.",
     ctx.hiringContext
