@@ -399,10 +399,13 @@ function AutoText({ value, onChange, className, placeholder }: {
   value: string; onChange: (v: string) => void; className?: string; placeholder?: string;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
+  const resize = useCallback(() => {
     const el = ref.current;
     if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
-  }, [value]);
+  }, []);
+  useEffect(() => { resize(); }, [value, resize]);
+  // Re-measure once web fonts finish loading (they change line height / wrapping).
+  useEffect(() => { document.fonts?.ready.then(resize); }, [resize]);
   return (
     <textarea
       ref={ref}
@@ -411,7 +414,7 @@ function AutoText({ value, onChange, className, placeholder }: {
       onChange={(e) => onChange(e.target.value)}
       rows={1}
       className={cn(
-        "w-full resize-none rounded-md bg-transparent px-1 py-0.5 outline-none transition-colors focus:bg-background focus:ring-1 focus:ring-brand/50",
+        "w-full resize-none overflow-hidden rounded-md bg-transparent px-1 py-0.5 outline-none transition-colors focus:bg-background focus:ring-1 focus:ring-brand/50",
         className,
       )}
     />

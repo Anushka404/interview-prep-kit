@@ -11,9 +11,13 @@ import { ZodError, type ZodType } from "zod";
  * callModel() only — callers are provider-agnostic.
  */
 
-const MODEL = process.env.LLM_MODEL ?? "gemini-2.5-flash";
-const MIN_GAP_MS = Number(process.env.LLM_MIN_GAP_MS ?? 1200);
+// flash-lite: 15 RPM / 1000 RPD free tier. We proactively cap ourselves well under
+// 15 RPM (a ~4.5s min gap ≈ 13/min) so we rarely hit a 429 in the first place —
+// that proactive throttle is the primary rate-limit defence (brief §2, §13).
+const MODEL = process.env.LLM_MODEL ?? "gemini-3.5-flash-lite";
+const MIN_GAP_MS = Number(process.env.LLM_MIN_GAP_MS ?? 4500);
 const MAX_ATTEMPTS = Number(process.env.LLM_MAX_ATTEMPTS ?? 6);
+const MAX_BACKOFF_MS = 30_000;
 
 let client: GoogleGenAI | null = null;
 function getClient(): GoogleGenAI {
@@ -63,8 +67,8 @@ function isTransient(err: unknown): boolean {
 /** Honour a server-suggested retry delay if present, else exponential backoff + jitter. */
 function backoffMs(attempt: number, err: unknown): number {
   const m = messageOf(err).match(/retry(?:Delay|-after)"?[:\s]+"?(\d+(?:\.\d+)?)(s)?/i);
-  if (m) return Math.ceil(parseFloat(m[1]) * (m[2] ? 1000 : 1)) + 250;
-  const base = Math.min(1000 * 2 ** attempt, 30_000);
+  if (m) return Math.min(Math.ceil(parseFloat(m[1]) * (m[2] ? 1000 : 1)) + 250, MAX_BACKOFF_MS);
+  const base = Math.min(1000 * 2 ** attempt, MAX_BACKOFF_MS);
   return base + Math.floor(Math.random() * 500);
 }
 

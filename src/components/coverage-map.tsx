@@ -5,7 +5,8 @@ import type { Kit } from "@/lib/schema";
 
 type Practice = Record<string, { confidence: number; at: string }>;
 
-const DIFF_OPACITY: Record<number, string> = { 1: "opacity-40", 2: "opacity-70", 3: "opacity-100" };
+// Difficulty tints the bubble background (sequential, one hue) — the number stays crisp.
+const DIFF_BG: Record<number, string> = { 1: "bg-brand/45", 2: "bg-brand/70", 3: "bg-brand" };
 
 // Practice confidence → reserved status (shipped with a text label, never colour alone).
 function confidenceBucket(avg: number | null): { label: string; cls: string } {
@@ -40,10 +41,12 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
     return c !== null && c < 2.5;
   });
 
+  const COL = `minmax(260px, 1.5fr) repeat(${questions.length}, 46px) 128px`;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* headline */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         <Stat value={`${coveredMusts.length}/${musts.length}`} label="must-haves covered" tone={gaps.length ? "bad" : "good"} />
         <Stat value={String(questions.length)} label="questions" />
         <Stat value={String(shaky.length)} label="weak from practice" tone={shaky.length ? "warn" : "good"} />
@@ -51,25 +54,22 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
 
       {/* matrix */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-semibold">Coverage map</h3>
-          <div className="flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><i className="size-2.5 rounded-sm bg-brand opacity-40" /> easy</span>
-            <span className="flex items-center gap-1"><i className="size-2.5 rounded-sm bg-brand opacity-70" /> med</span>
-            <span className="flex items-center gap-1"><i className="size-2.5 rounded-sm bg-brand" /> hard</span>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Coverage map</h3>
+          <div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand opacity-40" /> easy</span>
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand opacity-70" /> med</span>
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand" /> hard</span>
           </div>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-border">
-          <div
-            className="min-w-max"
-            style={{ display: "grid", gridTemplateColumns: `minmax(200px,1.4fr) repeat(${questions.length}, 30px) 108px` }}
-          >
+          <div className="min-w-max" style={{ display: "grid", gridTemplateColumns: COL }}>
             {/* header row */}
-            <Cell header>Requirement</Cell>
+            <Cell header sticky>Requirement</Cell>
             {questions.map((q, i) => (
-              <Cell key={q.id} header center title={`${q.category} · difficulty ${q.difficulty}\n${q.prompt}`}>
-                <span className="font-mono text-[10px] text-muted-foreground">{i + 1}</span>
+              <Cell key={q.id} header center dense title={`${q.category} · difficulty ${q.difficulty}\n${q.prompt}`}>
+                <span className="font-mono text-sm text-muted-foreground">{i + 1}</span>
               </Cell>
             ))}
             <Cell header center>Confidence</Cell>
@@ -80,19 +80,19 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
               const conf = confidenceBucket(reqConfidence(r.id));
               return (
                 <Row key={r.id}>
-                  <Cell className={cn("gap-2", isGap && "border-l-2 border-l-destructive")}>
-                    <span className={cn("shrink-0 rounded px-1.5 py-0.5 text-[10px]", r.priority === "must" ? "bg-brand-muted text-brand" : "bg-muted text-muted-foreground")}>
+                  <Cell sticky className={cn("gap-2.5", isGap && "border-l-2 border-l-destructive")}>
+                    <span className={cn("shrink-0 rounded px-2 py-0.5 text-xs", r.priority === "must" ? "bg-brand-muted text-brand" : "bg-muted text-muted-foreground")}>
                       {r.priority}
                     </span>
-                    <span className="truncate text-sm" title={r.text}>{r.text}</span>
-                    {isGap && <span className="ml-auto shrink-0 font-mono text-[10px] text-destructive">gap</span>}
+                    <span className="truncate" title={r.text}>{r.text}</span>
+                    {isGap && <span className="ml-auto shrink-0 font-mono text-xs text-destructive">gap</span>}
                   </Cell>
                   {questions.map((q, qi) => {
                     const on = coversReq(qi, r.id);
                     return (
-                      <Cell key={q.id} center title={on ? `q${qi + 1} covers this · difficulty ${q.difficulty}` : "not covered"}>
+                      <Cell key={q.id} center dense title={on ? `q${qi + 1} covers this · difficulty ${q.difficulty}` : "not covered"}>
                         {on ? (
-                          <span className={cn("grid size-5 place-items-center rounded-sm bg-brand text-[10px] font-medium text-brand-foreground", DIFF_OPACITY[q.difficulty])}>
+                          <span className={cn("grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold text-brand-foreground", DIFF_BG[q.difficulty])}>
                             {q.difficulty}
                           </span>
                         ) : (
@@ -102,14 +102,14 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
                     );
                   })}
                   <Cell center>
-                    <span className={cn("rounded-full px-2 py-0.5 text-[10px]", conf.cls)}>{conf.label}</span>
+                    <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", conf.cls)}>{conf.label}</span>
                   </Cell>
                 </Row>
               );
             })}
           </div>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Rows are requirements (must-haves first). Each cell shows a covering question, shaded by its difficulty.
           Confidence comes from your flashcard practice.
         </p>
@@ -117,27 +117,27 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
 
       {/* weak spots */}
       <section>
-        <h3 className="mb-3 font-semibold">Where to focus</h3>
+        <h3 className="mb-4 text-lg font-semibold">Where to focus</h3>
         {gaps.length === 0 && shaky.length === 0 ? (
           <p className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
             Every must-have has a question and nothing is shaky yet. Practise the deck to surface weak spots.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {gaps.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-destructive/20 text-xs text-destructive">!</span>
-                <span className="text-sm">{r.text}</span>
-                <span className="ml-auto shrink-0 font-mono text-[10px] text-destructive">no question — regenerate this category</span>
+              <li key={r.id} className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3.5">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-destructive/20 text-sm text-destructive">!</span>
+                <span>{r.text}</span>
+                <span className="ml-auto shrink-0 font-mono text-xs text-destructive">no question — regenerate this category</span>
               </li>
             ))}
             {shaky.map((r) => {
               const c = confidenceBucket(reqConfidence(r.id));
               return (
-                <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-3">
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px]", c.cls)}>{c.label}</span>
-                  <span className="text-sm">{r.text}</span>
-                  <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground">practise its flashcards</span>
+                <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-3.5">
+                  <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-medium", c.cls)}>{c.label}</span>
+                  <span>{r.text}</span>
+                  <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">practise its flashcards</span>
                 </li>
               );
             })}
@@ -149,19 +149,23 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div className="col-span-full grid grid-cols-subgrid border-t border-border transition-colors hover:bg-card/40">{children}</div>;
+  return <div className="col-span-full grid grid-cols-subgrid border-t border-border transition-colors hover:bg-card/30">{children}</div>;
 }
 
-function Cell({ children, header, center, className, title }: {
-  children?: React.ReactNode; header?: boolean; center?: boolean; className?: string; title?: string;
+function Cell({ children, header, center, sticky, dense, className, title }: {
+  children?: React.ReactNode; header?: boolean; center?: boolean; sticky?: boolean; dense?: boolean; className?: string; title?: string;
 }) {
   return (
     <div
       title={title}
       className={cn(
-        "flex items-center px-3 py-2.5",
+        "flex items-center py-3.5 text-sm",
+        dense ? "px-1" : "px-4",
         center && "justify-center",
-        header && "bg-card/60 py-2 text-xs font-medium text-muted-foreground",
+        header && "py-3 font-medium text-muted-foreground",
+        header && !sticky && "bg-card/60",
+        sticky && "sticky left-0 border-r border-border",
+        sticky && (header ? "z-20 bg-card" : "z-10 bg-background"),
         className,
       )}
     >
@@ -173,9 +177,9 @@ function Cell({ children, header, center, className, title }: {
 function Stat({ value, label, tone }: { value: string; label: string; tone?: "good" | "bad" | "warn" }) {
   const toneCls = tone === "bad" ? "text-destructive" : tone === "warn" ? "text-amber-400" : tone === "good" ? "text-emerald-400" : "text-foreground";
   return (
-    <div className="rounded-xl border border-border bg-card/40 px-4 py-3">
-      <span className={cn("text-2xl font-semibold tracking-tight", toneCls)}>{value}</span>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+    <div className="rounded-xl border border-border bg-card/40 px-5 py-4">
+      <span className={cn("text-3xl font-semibold tracking-tight", toneCls)}>{value}</span>
+      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
     </div>
   );
 }

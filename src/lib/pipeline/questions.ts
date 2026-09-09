@@ -3,16 +3,17 @@ import { generateJSON } from "@/lib/llm";
 import { untrusted, SYSTEM_GUARD } from "./prompts";
 import { QuestionCategory, type Requirement } from "@/lib/schema";
 
-const DraftSchema = z.object({
-  questions: z.array(
-    z.object({
-      requirement_ids: z.array(z.string()),
-      prompt: z.string().min(1),
-      answer_outline: z.string(),
-      difficulty: z.number().int().min(1).max(3),
-    }),
-  ),
+const QuestionItem = z.object({
+  requirement_ids: z.array(z.string()),
+  prompt: z.string().min(1),
+  answer_outline: z.string(),
+  difficulty: z.number().int().min(1).max(3),
 });
+// Some models return a bare array instead of {questions:[...]}; accept both.
+const DraftSchema = z.union([
+  z.object({ questions: z.array(QuestionItem) }),
+  z.array(QuestionItem).transform((questions) => ({ questions })),
+]);
 
 export interface QuestionDraft {
   requirement_ids: string[];

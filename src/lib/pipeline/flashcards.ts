@@ -3,15 +3,16 @@ import { generateJSON } from "@/lib/llm";
 import { SYSTEM_GUARD } from "./prompts";
 import type { Requirement } from "@/lib/schema";
 
-const FlashcardDraftSchema = z.object({
-  flashcards: z.array(
-    z.object({
-      front: z.string().min(1),
-      back: z.string().min(1),
-      requirement_ids: z.array(z.string()),
-    }),
-  ),
+const FlashcardItem = z.object({
+  front: z.string().min(1),
+  back: z.string().min(1),
+  requirement_ids: z.array(z.string()),
 });
+// Accept a bare array as well as {flashcards:[...]}.
+const FlashcardDraftSchema = z.union([
+  z.object({ flashcards: z.array(FlashcardItem) }),
+  z.array(FlashcardItem).transform((flashcards) => ({ flashcards })),
+]);
 
 export interface FlashcardDraft {
   front: string;
