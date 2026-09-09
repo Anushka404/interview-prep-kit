@@ -126,18 +126,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@keyframes drift {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(1.5%, -1%, 0) scale(1.04); }
-  100% { transform: translate3d(0, 0, 0) scale(1); }
-}
-.animate-drift {
-  animation: drift 32s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-drift { animation: none; }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

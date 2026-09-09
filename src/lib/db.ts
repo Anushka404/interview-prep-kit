@@ -58,6 +58,10 @@ export interface KitDoc {
   dedupeHash: string;
   input: { jd: string; company_url: string; days: number };
   kit: Kit | null;
+  /** Research captured at generation time so a section can be regenerated without re-crawling. */
+  research?: { company: string; crawledText: string; searchText: string; foundHiring: boolean };
+  /** Practice confidence per flashcard id (1 = shaky, 3 = solid). Drives session ordering + weak-spot map. */
+  practice?: Record<string, { confidence: number; at: string }>;
   progress: ProgressStep[];
   error: string | null;
   createdAt: Date;

@@ -22,10 +22,23 @@ export interface StepEvent {
 }
 export type OnStep = (e: StepEvent) => void | Promise<void>;
 
+/** Research context captured during a run, persisted so a section can be
+ *  regenerated later without re-crawling the company site. */
+export interface ResearchContext {
+  company: string;
+  crawledText: string;
+  searchText: string;
+  foundHiring: boolean;
+}
+export interface PipelineResult {
+  kit: Kit;
+  research: ResearchContext;
+}
+
 const MAX_PASSES = Number(process.env.COVERAGE_MAX_PASSES ?? 3);
 
 // A requirement's natural question category.
-function categoryFor(kind: Requirement["kind"]): "technical" | "behavioural" | "company-fit" {
+export function categoryFor(kind: Requirement["kind"]): "technical" | "behavioural" | "company-fit" {
   if (kind === "behavioural") return "behavioural";
   if (kind === "domain") return "company-fit";
   return "technical";
@@ -45,7 +58,7 @@ function companyFromUrl(url: string): string {
   }
 }
 
-export async function runPipeline(input: PipelineInput, onStep: OnStep = () => {}): Promise<Kit> {
+export async function runPipeline(input: PipelineInput, onStep: OnStep = () => {}): Promise<PipelineResult> {
   const emit = async (step: string, status: StepStatus, detail?: string) =>
     onStep({ step, status, detail });
 
@@ -200,5 +213,8 @@ export async function runPipeline(input: PipelineInput, onStep: OnStep = () => {
     // Structural bug in our own assembly — surface it rather than saving a bad kit.
     throw new Error(`generated kit failed integrity check: ${problems.join("; ")}`);
   }
-  return kit;
+  return {
+    kit,
+    research: { company, crawledText, searchText: search.text, foundHiring: crawl?.foundHiring ?? false },
+  };
 }

@@ -44,7 +44,7 @@ async function main() {
   for (const c of cases) {
     const t0 = Date.now();
     try {
-      const kit = await runPipeline(
+      const { kit } = await runPipeline(
         { jd: c.jd, company_url: c.company_url, days: c.days },
         (e) => {
           process.stderr.write(`  [${c.id}] ${e.step}:${e.status}${e.detail ? ` (${e.detail})` : ""}\n`);
