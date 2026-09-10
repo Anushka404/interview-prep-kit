@@ -5,8 +5,13 @@ import type { Kit } from "@/lib/schema";
 
 type Practice = Record<string, { confidence: number; at: string }>;
 
-// Difficulty tints the bubble background (sequential, one hue) — the number stays crisp.
-const DIFF_BG: Record<number, string> = { 1: "bg-brand/45", 2: "bg-brand/70", 3: "bg-brand" };
+// Difficulty tints the bubble (sequential, one hue, three distinct lightness steps —
+// not just opacity, so easy/med/hard read apart at a glance) — the number stays crisp.
+const DIFF_STYLE: Record<number, string> = {
+  1: "bg-diff-easy text-diff-easy-foreground",
+  2: "bg-diff-med text-diff-med-foreground",
+  3: "bg-diff-hard text-diff-hard-foreground",
+};
 
 // Practice confidence → reserved status (shipped with a text label, never colour alone).
 function confidenceBucket(avg: number | null): { label: string; cls: string } {
@@ -57,14 +62,17 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Coverage map</h3>
           <div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand opacity-40" /> easy</span>
-            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand opacity-70" /> med</span>
-            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-brand" /> hard</span>
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-diff-easy" /> easy</span>
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-diff-med" /> med</span>
+            <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-diff-hard" /> hard</span>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <div className="min-w-max" style={{ display: "grid", gridTemplateColumns: COL }}>
+        {/* w-fit: the box hugs the table's actual content width instead of stretching to
+            fill the section — a 6-column table shouldn't leave dead space inside a border
+            just because the page is wide. overflow-x-auto still scrolls on narrow screens. */}
+        <div className="w-fit max-w-full overflow-x-auto rounded-xl border border-border">
+          <div style={{ display: "grid", gridTemplateColumns: COL }}>
             {/* header row */}
             <Cell header sticky>Requirement</Cell>
             {questions.map((q, i) => (
@@ -92,7 +100,7 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
                     return (
                       <Cell key={q.id} center dense title={on ? `q${qi + 1} covers this · difficulty ${q.difficulty}` : "not covered"}>
                         {on ? (
-                          <span className={cn("grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold text-brand-foreground", DIFF_BG[q.difficulty])}>
+                          <span className={cn("grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold", DIFF_STYLE[q.difficulty])}>
                             {q.difficulty}
                           </span>
                         ) : (

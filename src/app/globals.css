@@ -39,6 +39,12 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-muted: var(--brand-muted);
+  --color-diff-easy: var(--diff-easy);
+  --color-diff-easy-foreground: var(--diff-easy-foreground);
+  --color-diff-med: var(--diff-med);
+  --color-diff-med-foreground: var(--diff-med-foreground);
+  --color-diff-hard: var(--diff-hard);
+  --color-diff-hard-foreground: var(--diff-hard-foreground);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -74,6 +80,14 @@
   --brand: oklch(0.58 0.22 277);
   --brand-foreground: oklch(0.985 0 0);
   --brand-muted: oklch(0.58 0.22 277 / 12%);
+  /* Difficulty ramp — one hue (matches brand), three well-separated lightness/chroma
+     steps so easy/med/hard are distinguishable at a glance, not just by opacity. */
+  --diff-easy: oklch(0.78 0.14 277);
+  --diff-easy-foreground: oklch(0.22 0.05 277);
+  --diff-med: oklch(0.62 0.2 277);
+  --diff-med-foreground: oklch(0.985 0 0);
+  --diff-hard: oklch(0.42 0.19 277);
+  --diff-hard-foreground: oklch(0.97 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -112,6 +126,12 @@
   --brand: oklch(0.62 0.2 277);
   --brand-foreground: oklch(0.985 0 0);
   --brand-muted: oklch(0.62 0.2 277 / 15%);
+  --diff-easy: oklch(0.78 0.14 277);
+  --diff-easy-foreground: oklch(0.22 0.05 277);
+  --diff-med: oklch(0.62 0.2 277);
+  --diff-med-foreground: oklch(0.985 0 0);
+  --diff-hard: oklch(0.42 0.19 277);
+  --diff-hard-foreground: oklch(0.97 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -142,5 +162,12 @@
   h1, h2 {
     font-family: var(--ff-display), var(--ff-sans), system-ui, sans-serif;
     letter-spacing: -0.02em;
+  }
+  /* Every clickable control gets a pointer cursor; disabled ones don't. */
+  button, [role="button"], [role="tab"], summary, a {
+    cursor: pointer;
+  }
+  button:disabled, [role="button"][aria-disabled="true"], [role="tab"]:disabled {
+    cursor: not-allowed;
   }
 }

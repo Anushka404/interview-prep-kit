@@ -27,6 +27,44 @@ const CATEGORY_LABEL: Record<string, string> = {
   "company-fit": "Company fit",
 };
 
+type Priority = "must" | "nice";
+type Kind = "technical" | "behavioural" | "domain";
+const PRIORITIES: Priority[] = ["must", "nice"];
+const KINDS: Kind[] = ["technical", "behavioural", "domain"];
+
+/** A row of "All" + one pill per option; click to filter, click again to clear. */
+function FilterBar<T extends string>({
+  label, options, labels, value, onChange,
+}: { label: string; options: T[]; labels?: Record<string, string>; value: T | "all"; onChange: (v: T | "all") => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <FilterPill active={value === "all"} onClick={() => onChange("all")}>All</FilterPill>
+      {options.map((opt) => (
+        <FilterPill key={opt} active={value === opt} onClick={() => onChange(value === opt ? "all" : opt)}>
+          {labels?.[opt] ?? opt}
+        </FilterPill>
+      ))}
+    </div>
+  );
+}
+
+function FilterPill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+        active ? "border-brand bg-brand-muted text-brand" : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 type SaveState = "saved" | "saving" | "error";
 
 export function KitBuilder({
@@ -36,6 +74,10 @@ export function KitBuilder({
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [regen, setRegen] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const [reqPriorityFilter, setReqPriorityFilter] = useState<Priority | "all">("all");
+  const [reqKindFilter, setReqKindFilter] = useState<Kind | "all">("all");
+  const [questionCategoryFilter, setQuestionCategoryFilter] = useState<Category | "all">("all");
 
   const save = useCallback(async (next: Kit) => {
     setSaveState("saving");
@@ -94,6 +136,14 @@ export function KitBuilder({
   const musts = kit.role.requirements.filter((r) => r.priority === "must");
   const uncoveredMusts = musts.filter((r) => kit.coverage.uncovered_requirement_ids.includes(r.id));
 
+  const filteredRequirements = kit.role.requirements.filter(
+    (r) => (reqPriorityFilter === "all" || r.priority === reqPriorityFilter) &&
+      (reqKindFilter === "all" || r.kind === reqKindFilter),
+  );
+  const filteredQuestions = kit.questions.filter(
+    (q) => questionCategoryFilter === "all" || q.category === questionCategoryFilter,
+  );
+
   // --- question ops ---
   const editQuestion = (qid: string, patch: Partial<Question>) =>
     mutate((k) => {
@@ -138,7 +188,7 @@ export function KitBuilder({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+      <div className="mt-5 flex flex-wrap gap-2.5 text-xs">
         <Badge variant="secondary">{kit.questions.length} questions</Badge>
         <Badge variant="secondary">{kit.flashcards.length} flashcards</Badge>
         <Badge variant="secondary">{kit.schedule.days_available}-day plan</Badge>
@@ -173,10 +223,19 @@ export function KitBuilder({
           </section>
 
           <section>
-            <h2 className="mb-3 font-semibold">Requirements</h2>
-            <ul className="space-y-2">
-              {kit.role.requirements.map((r) => (
-                <li key={r.id} className="flex items-start gap-3 rounded-lg border border-border bg-card/30 px-4 py-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-semibold">Requirements</h2>
+              <span className="text-xs text-muted-foreground">
+                {filteredRequirements.length} of {kit.role.requirements.length}
+              </span>
+            </div>
+            <div className="mb-4 space-y-2.5 rounded-lg border border-border bg-card/20 p-3.5">
+              <FilterBar label="Priority" options={PRIORITIES} value={reqPriorityFilter} onChange={setReqPriorityFilter} />
+              <FilterBar label="Kind" options={KINDS} value={reqKindFilter} onChange={setReqKindFilter} />
+            </div>
+            <ul className="space-y-2.5">
+              {filteredRequirements.map((r) => (
+                <li key={r.id} className="flex items-start gap-3.5 rounded-lg border border-border bg-card/30 px-4 py-3.5">
                   <button
                     onClick={() => mutate((k) => { const req = k.role.requirements.find((x) => x.id === r.id); if (req) req.priority = req.priority === "must" ? "nice" : "must"; })}
                     className={cn("shrink-0 rounded px-2 py-0.5 text-xs", r.priority === "must" ? "bg-brand-muted text-brand" : "bg-muted text-muted-foreground")}
@@ -192,29 +251,46 @@ export function KitBuilder({
                   <span className="shrink-0 font-mono text-xs text-muted-foreground">{r.kind}</span>
                 </li>
               ))}
+              {filteredRequirements.length === 0 && (
+                <li className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  No requirements match these filters.
+                </li>
+              )}
             </ul>
           </section>
         </TabsContent>
 
         {/* Questions */}
         <TabsContent value="questions" className="space-y-4 pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">Edit inline · reorder · pin to protect from regeneration</p>
             <Button variant="outline" size="sm" onClick={addQuestion}>+ Add question</Button>
           </div>
-          {kit.questions.map((q, i) => (
-            <QuestionEditor
-              key={q.id}
-              q={q}
-              first={i === 0}
-              last={i === kit.questions.length - 1}
-              reqText={(rid) => kit.role.requirements.find((r) => r.id === rid)?.text ?? rid}
-              onEdit={(patch) => editQuestion(q.id, patch)}
-              onMove={(dir) => moveQuestion(q.id, dir)}
-              onDelete={() => deleteQuestion(q.id)}
-              onPin={() => togglePin(q.id)}
-            />
-          ))}
+          <div className="mb-1 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/20 p-3.5">
+            <FilterBar label="Category" options={CATEGORIES} labels={CATEGORY_LABEL} value={questionCategoryFilter} onChange={setQuestionCategoryFilter} />
+            <span className="text-xs text-muted-foreground">{filteredQuestions.length} of {kit.questions.length}</span>
+          </div>
+          {filteredQuestions.map((q) => {
+            const i = kit.questions.findIndex((x) => x.id === q.id);
+            return (
+              <QuestionEditor
+                key={q.id}
+                q={q}
+                first={i === 0}
+                last={i === kit.questions.length - 1}
+                reqText={(rid) => kit.role.requirements.find((r) => r.id === rid)?.text ?? rid}
+                onEdit={(patch) => editQuestion(q.id, patch)}
+                onMove={(dir) => moveQuestion(q.id, dir)}
+                onDelete={() => deleteQuestion(q.id)}
+                onPin={() => togglePin(q.id)}
+              />
+            );
+          })}
+          {filteredQuestions.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              No questions match this filter.
+            </p>
+          )}
         </TabsContent>
 
         {/* Flashcards */}
@@ -314,11 +390,11 @@ function QuestionEditor({
 }) {
   return (
     <div className={cn("rounded-xl border bg-card/40 p-5", q.pinned ? "border-brand/50" : "border-border")}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         <select
           value={q.category}
           onChange={(e) => onEdit({ category: e.target.value as Category })}
-          className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+          className="cursor-pointer rounded-md border border-border bg-background px-2.5 py-1 text-xs"
           aria-label="Question category"
         >
           {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
@@ -326,7 +402,7 @@ function QuestionEditor({
         <select
           value={q.difficulty}
           onChange={(e) => onEdit({ difficulty: Number(e.target.value) })}
-          className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+          className="cursor-pointer rounded-md border border-border bg-background px-2.5 py-1 text-xs"
           aria-label="Difficulty"
         >
           <option value={1}>Easy</option><option value={2}>Medium</option><option value={3}>Hard</option>
