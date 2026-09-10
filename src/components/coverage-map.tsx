@@ -41,7 +41,7 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
     return c !== null && c < 2.5;
   });
 
-  const COL = `minmax(260px, 1.5fr) repeat(${questions.length}, 46px) 128px`;
+  const COL = `minmax(260px, 380px) repeat(${questions.length}, 46px) 128px`;
 
   return (
     <div className="space-y-10">
@@ -80,11 +80,11 @@ export function CoverageMap({ kit, practice }: { kit: Kit; practice: Practice })
               const conf = confidenceBucket(reqConfidence(r.id));
               return (
                 <Row key={r.id}>
-                  <Cell sticky className={cn("gap-2.5", isGap && "border-l-2 border-l-destructive")}>
+                  <Cell sticky className={cn("items-start gap-2.5", isGap && "border-l-2 border-l-destructive")}>
                     <span className={cn("shrink-0 rounded px-2 py-0.5 text-xs", r.priority === "must" ? "bg-brand-muted text-brand" : "bg-muted text-muted-foreground")}>
                       {r.priority}
                     </span>
-                    <span className="truncate" title={r.text}>{r.text}</span>
+                    <span className="whitespace-normal break-words">{r.text}</span>
                     {isGap && <span className="ml-auto shrink-0 font-mono text-xs text-destructive">gap</span>}
                   </Cell>
                   {questions.map((q, qi) => {
